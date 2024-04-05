@@ -25,6 +25,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_21.x | bash - \
     git \
     wget \
     curl \
+    host \
+    dnsutils \
+    whois \
     netcat-openbsd \
     libpq-dev \
     libpango-1.0-0 \
