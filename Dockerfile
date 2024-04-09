@@ -116,6 +116,15 @@ RUN go install -v github.com/hahwul/dalfox/v2@latest
 RUN go install -v github.com/projectdiscovery/katana/cmd/katana@latest
 RUN go install -v github.com/dwisiswant0/crlfuzz/cmd/crlfuzz@latest
 RUN go install -v github.com/sa7mon/s3scanner@latest
+RUN go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest
+RUN go install -v github.com/projectdiscovery/shuffledns/cmd/shuffledns@latest
+RUN go install -v github.com/projectdiscovery/cloudlist/cmd/cloudlist@latest
+RUN go install -v github.com/projectdiscovery/chaos-client/cmd/chaos@latest
+RUN go install -v github.com/projectdiscovery/uncover/cmd/uncover@latest
+RUN go install github.com/projectdiscovery/alterx/cmd/alterx@latest
+RUN go install -v github.com/projectdiscovery/interactsh/cmd/interactsh-client@latest
+RUN go install github.com/projectdiscovery/cvemap/cmd/cvemap@latest
+RUN go install github.com/OJ/gobuster/v3@latest
 
 # Update Nuclei and Nuclei-Templates
 RUN nuclei -update
@@ -135,12 +144,6 @@ RUN pip install --break-system-packages -r /tmp/requirements.txt
 # httpx seems to have issue, use alias instead!!!
 RUN echo 'alias httpx="/go/bin/httpx"' >> ~/.bashrc
 RUN alias httpx="/go/bin/httpx"
-
-# Temporary fix for whatportis bug - See https://github.com/yogeshojha/rengine/issues/984
-RUN sed -i 's/purge()/truncate()/g' /usr/local/lib/python3.11/dist-packages/whatportis/cli.py
-
-# update whatportis
-RUN yes | whatportis --update
 
 # clone dirsearch default wordlist
 RUN mkdir -p /usr/src/wordlist
@@ -181,6 +184,11 @@ RUN git clone https://github.com/UnaPibaGeek/ctfr /usr/src/github/ctfr
 # clone gooFuzz
 RUN git clone https://github.com/m3n0sd0n4ld/GooFuzz.git /usr/src/github/goofuzz \
     && chmod +x /usr/src/github/goofuzz/GooFuzz
+
+# clone WhatsMyName Client
+RUN git clone https://github.com/grabowskiadrian/whatsmyname-client.git /usr/src/github/WhatsMyName-Client \
+    && pip install --break-system-packages -r /usr/src/github/WhatsMyName-Client/requirements.txt \
+    && python3 /usr/src/github/WhatsMyName-Client/wmnc.py update
 
 # install h8mail
 RUN pip install --break-system-packages h8mail

@@ -1,4 +1,3 @@
-netlas==0.4.1
-uro==1.0.0
-whatportis
-wafw00f==2.2.0
+netlas
+uro
+wafw00f
