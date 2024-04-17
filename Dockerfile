@@ -193,6 +193,9 @@ RUN git clone https://github.com/grabowskiadrian/whatsmyname-client.git /usr/src
 # install h8mail
 RUN pip install --break-system-packages h8mail
 
+# install whoisdomain
+RUN pip install --break-system-packages whoisdomain
+
 # install gf patterns
 RUN mkdir ~/.gf \
     && git clone https://github.com/tomnomnom/gf ~/Gf-tomnomnom \
@@ -213,6 +216,42 @@ RUN naabu -hc
 RUN subfinder
 RUN amass
 RUN nuclei
+
+# Download Wordlists
+RUN mkdir -p /usr/src/wordlist
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-20000.txt -O /usr/src/wordlist/subdomains-top1million-20000.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/api/api-endpoints.txt -O /usr/src/wordlist/api-endpoints.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/Common-DB-Backups.txt -O /usr/src/wordlist/Common-DB-Backups.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/Common-PHP-Filenames.txt -O /usr/src/wordlist/Common-PHP-Filenames.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/CommonBackdoors-ASP.fuzz.txt -O /usr/src/wordlist/CommonBackdoors-ASP.fuzz.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/CommonBackdoors-JSP.fuzz.txt -O /usr/src/wordlist/CommonBackdoors-JSP.fuzz.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/CommonBackdoors-PHP.fuzz.txt -O /usr/src/wordlist/CommonBackdoors-PHP.fuzz.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/CommonBackdoors-PL.fuzz.txt -O /usr/src/wordlist/CommonBackdoors-PL.fuzz.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/common-and-portuguese.txt -O /usr/src/wordlist/common-and-portuguese.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/directory-list-2.3-medium.txt -O /usr/src/wordlist/directory-list-2.3-medium.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/raft-medium-files.txt -O /usr/src/wordlist/raft-medium-files.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Fuzzing/fuzz-Bo0oM.txt -O /usr/src/wordlist/fuzz-Bo0oM.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/darkweb2017-top10000.txt -O /usr/src/wordlist/darkweb2017-top10000.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/xato-net-10-million-passwords-10000.txt -O /usr/src/wordlist/xato-net-10-million-passwords-10000.txt
+
+# Install dnsrecon
+RUN git clone https://github.com/darkoperator/dnsrecon.git /usr/src/github/dnsrecon \
+    && pip install --break-system-packages -r /usr/src/github/dnsrecon/requirements.txt
+
+# Install sqlmap
+RUN git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git sqlmap-dev \
+    && ln -s /usr/src/github/sqlmap-dev/sqlmap.py /usr/local/bin/sqlmap
+
+# Install XSStrike
+RUN git clone https://github.com/s0md3v/XSStrike.git /usr/src/github/XSStrike \
+    && pip install --break-system-packages -r /usr/src/github/XSStrike/requirements.txt
+
+# Install paramspider
+RUN git clone https://github.com/devanshbatham/paramspider.git /usr/src/github/paramspider \
+    && pip install /usr/src/github/paramspider --break-system-packages 
+
+# Install meg
+RUN go install github.com/tomnomnom/meg@latest
 
 COPY ./supervisord.conf /etc/supervisor/supervisord.conf
 
