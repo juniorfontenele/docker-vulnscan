@@ -254,6 +254,9 @@ RUN git clone https://github.com/devanshbatham/paramspider.git /usr/src/github/p
 # Install meg
 RUN go install github.com/tomnomnom/meg@latest
 
+# Parse wordlist
+RUN cat /usr/src/wordlist/dicc.txt | grep -v "%EXT" > /usr/src/wordlist/dicc_parsed.txt
+
 COPY ./supervisord.conf /etc/supervisor/supervisord.conf
 
 WORKDIR /app
