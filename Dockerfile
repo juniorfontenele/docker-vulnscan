@@ -220,6 +220,7 @@ RUN nuclei
 # Download Wordlists
 RUN mkdir -p /usr/src/wordlist
 RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-20000.txt -O /usr/src/wordlist/subdomains-top1million-20000.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-5000.txt -O /usr/src/wordlist/subdomains-top1million-5000.txt
 RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/api/api-endpoints.txt -O /usr/src/wordlist/api-endpoints.txt
 RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/Common-DB-Backups.txt -O /usr/src/wordlist/Common-DB-Backups.txt
 RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/Common-PHP-Filenames.txt -O /usr/src/wordlist/Common-PHP-Filenames.txt
