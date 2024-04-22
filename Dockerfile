@@ -257,6 +257,17 @@ RUN go install github.com/tomnomnom/meg@latest
 # Parse wordlist
 RUN cat /usr/src/wordlist/dicc.txt | grep -v "%EXT" > /usr/src/wordlist/dicc_parsed.txt
 
+# Install proxychains4
+RUN wget https://github.com/haad/proxychains/archive/refs/tags/proxychains-4.4.0.tar.gz -O /tmp/proxychains-4.4.0.tar.gz \
+    && tar -xvf /tmp/proxychains-4.4.0.tar.gz -C /tmp \
+    && cd /tmp/proxychains-proxychains-4.4.0 \
+    && ./configure \
+    && USER_CFLAGS="-Wno-stringop-truncation" make \
+    && make install \
+    && cd /tmp \
+    && rm -rf /tmp/proxychains-proxychains-4.4.0 \
+    && rm /tmp/proxychains-4.4.0.tar.gz
+
 COPY ./supervisord.conf /etc/supervisor/supervisord.conf
 
 WORKDIR /app
