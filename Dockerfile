@@ -264,6 +264,7 @@ RUN wget https://github.com/haad/proxychains/archive/refs/tags/proxychains-4.4.0
     && ./configure \
     && USER_CFLAGS="-Wno-stringop-truncation" make \
     && make install \
+    && cp src/proxychains.conf /etc/proxychains.conf \
     && cd /tmp \
     && rm -rf /tmp/proxychains-proxychains-4.4.0 \
     && rm /tmp/proxychains-4.4.0.tar.gz
