@@ -176,7 +176,7 @@ RUN git clone https://github.com/Tuhinshubhra/CMSeeK /usr/src/github/CMSeeK \
     && pip install --break-system-packages -r /usr/src/github/CMSeeK/requirements.txt
 
 # clone Infoga
-RUN git clone https://github.com/GiJ03/Infoga /usr/src/github/Infoga
+RUN git clone https://github.com/The404Hacking/Infoga /usr/src/github/Infoga
 
 # clone ctfr
 RUN git clone https://github.com/UnaPibaGeek/ctfr /usr/src/github/ctfr
