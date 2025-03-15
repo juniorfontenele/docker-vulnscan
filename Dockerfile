@@ -1,274 +1,185 @@
-FROM jftecnologia/frankenphp:8.3
+# Stage 1: Build Go tools
+FROM golang:1.22 AS go-builder
 
-# Labels and Credits
-LABEL \
-    name="Vulnerability Scanner" \
-    author="Junior Fontenele <dockerfile+vulnscan@juniorfontenele.com.br>" \
-    description="Image with set of security tools for vulnerability scanning"
+RUN apt-get update \
+  && apt-get upgrade -y \
+  && apt-get install -y --no-install-recommends \
+  libpcap-dev python3-netaddr \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies (nodejs, puppeteer, browsershot, nmap)
-RUN curl -fsSL https://deb.nodesource.com/setup_21.x | bash - \
-    && apt-get update \
-    && apt-get upgrade -y \
-    && apt-get install -y \
-    nmap \
-    nodejs \
-    python3 \
-    python3-dev \
-    python3-pip \
-    gconf-service \
-    build-essential \
-    cmake \
-    geoip-bin \
-    geoip-database \
-    gcc \
-    git \
-    wget \
-    curl \
-    host \
-    dnsutils \
-    whois \
-    netcat-openbsd \
-    libpq-dev \
-    libpango-1.0-0 \
-    libpangoft2-1.0-0 \
-    libpcap-dev \
-    python3-netaddr \
-# Browsershot
-    libasound2 \
-    libatk1.0-0 \
-    libc6 \
-    libcairo2 \
-    libcups2 \
-    libdbus-1-3 \
-    libexpat1 \
-    libfontconfig1 \
-    libgbm1 \
-    libgcc1 \
-    libgconf-2-4 \
-    libgdk-pixbuf2.0-0 \
-    libglib2.0-0 \
-    libgtk-3-0 \
-    libnspr4 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libstdc++6 \
-    libx11-6 \
-    libx11-xcb1 \
-    libxcb1 \
-    libxcomposite1 \
-    libxcursor1 \
-    libxdamage1 \
-    libxext6 \
-    libxfixes3 \
-    libxi6 \
-    libxrandr2 \
-    libxrender1 \
-    libxss1 \
-    libxtst6 \
-    ca-certificates \
-    fonts-liberation \
-    libappindicator1 \
-    libnss3 \
-    lsb-release \
-    xdg-utils \
-    libgbm-dev \
-    libxshmfence-dev \
-    && npm install --location=global --unsafe-perm puppeteer@^17 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install golang
-RUN curl -fsSL https://go.dev/dl/go1.22.2.linux-amd64.tar.gz -o go1.22.2.linux-amd64.tar.gz \
-    && rm -rf /usr/local/go \
-    && tar -C /usr/local -xzf go1.22.2.linux-amd64.tar.gz \
-    && rm go1.22.2.linux-amd64.tar.gz \
-    && echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile \
-    && export PATH=$PATH:/usr/local/go/bin
-
-ENV GOROOT="/usr/local/go"
-ENV GOPATH=$HOME/go
-ENV PATH="${PATH}:${GOROOT}/bin:${GOPATH}/bin"
-
-# Make directory for app
-WORKDIR /usr/src/app
-
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1    
-
-# Download Go packages
+# Install Go tools individually to avoid module conflicts
 RUN go install -v github.com/jaeles-project/gospider@latest
 RUN go install -v github.com/tomnomnom/gf@latest
 RUN go install -v github.com/tomnomnom/unfurl@latest
 RUN go install -v github.com/tomnomnom/waybackurls@latest
+RUN go install -v github.com/tomnomnom/meg@latest
 RUN go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
 RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
 RUN go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
 RUN go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
 RUN go install -v github.com/hakluke/hakrawler@latest
 RUN go install -v github.com/lc/gau/v2/cmd/gau@latest
-RUN go install -v github.com/jaeles-project/gospider@latest
-RUN go install -v github.com/owasp-amass/amass/v3/...@latest
+RUN go install -v github.com/owasp-amass/amass/v4/...@latest
 RUN go install -v github.com/ffuf/ffuf@latest
 RUN go install -v github.com/projectdiscovery/tlsx/cmd/tlsx@latest
 RUN go install -v github.com/hahwul/dalfox/v2@latest
 RUN go install -v github.com/projectdiscovery/katana/cmd/katana@latest
 RUN go install -v github.com/dwisiswant0/crlfuzz/cmd/crlfuzz@latest
-RUN go install -v github.com/sa7mon/s3scanner@latest
 RUN go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest
 RUN go install -v github.com/projectdiscovery/shuffledns/cmd/shuffledns@latest
 RUN go install -v github.com/projectdiscovery/cloudlist/cmd/cloudlist@latest
 RUN go install -v github.com/projectdiscovery/chaos-client/cmd/chaos@latest
 RUN go install -v github.com/projectdiscovery/uncover/cmd/uncover@latest
-RUN go install github.com/projectdiscovery/alterx/cmd/alterx@latest
+RUN go install -v github.com/projectdiscovery/alterx/cmd/alterx@latest
 RUN go install -v github.com/projectdiscovery/interactsh/cmd/interactsh-client@latest
-RUN go install github.com/projectdiscovery/cvemap/cmd/cvemap@latest
-RUN go install github.com/OJ/gobuster/v3@latest
+RUN go install -v github.com/projectdiscovery/cvemap/cmd/cvemap@latest
+RUN go install -v github.com/OJ/gobuster/v3@latest
 
-# Update Nuclei and Nuclei-Templates
-RUN nuclei -update
-RUN nuclei -update-templates
+# Stage 2: Builder
+FROM dunglas/frankenphp:php8.4 AS builder
 
-# Update project discovery tools
-RUN httpx -up
-RUN naabu -up
-RUN subfinder -up
-RUN tlsx -up
-RUN katana -up
+# Create directories
+RUN mkdir -p /usr/src/wordlist /usr/src/github
 
-# Copy requirements
+# System packages installation
+RUN apt-get update \
+  && apt-get upgrade -y \
+  && apt-get install -y --no-install-recommends \
+  build-essential cmake gcc git wget curl \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# Download wordlists
+WORKDIR /usr/src/wordlist
+RUN wget https://raw.githubusercontent.com/maurosoria/dirsearch/master/db/dicc.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/deepmagic.com-prefixes-top50000.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-20000.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-5000.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/api/api-endpoints.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/Common-DB-Backups.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/common-and-portuguese.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/directory-list-2.3-medium.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/raft-medium-files.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Fuzzing/fuzz-Bo0oM.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/darkweb2017-top10000.txt
+RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/xato-net-10-million-passwords-10000.txt
+
+# Clone and install security tools
+WORKDIR /usr/src/github
+RUN git clone --depth 1 https://github.com/aboul3la/Sublist3r /usr/src/github/Sublist3r
+RUN git clone --depth 1 https://github.com/shmilylty/OneForAll /usr/src/github/OneForAll
+RUN git clone --depth 1 https://github.com/FortyNorthSecurity/EyeWitness /usr/src/github/EyeWitness
+RUN git clone --depth 1 https://github.com/laramies/theHarvester /usr/src/github/theHarvester
+RUN git clone --depth 1 https://github.com/scipag/vulscan /usr/src/github/scipag_vulscan
+RUN git clone --depth 1 https://github.com/Tuhinshubhra/CMSeeK /usr/src/github/CMSeeK
+RUN git clone --depth 1 https://github.com/The404Hacking/Infoga /usr/src/github/Infoga
+RUN git clone --depth 1 https://github.com/UnaPibaGeek/ctfr /usr/src/github/ctfr
+RUN git clone --depth 1 https://github.com/m3n0sd0n4ld/GooFuzz.git /usr/src/github/goofuzz
+RUN git clone --depth 1 https://github.com/grabowskiadrian/whatsmyname-client.git /usr/src/github/WhatsMyName-Client
+RUN git clone --depth 1 https://github.com/darkoperator/dnsrecon.git /usr/src/github/dnsrecon
+RUN git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git /usr/src/github/sqlmap-dev
+RUN git clone --depth 1 https://github.com/s0md3v/XSStrike.git /usr/src/github/XSStrike
+RUN git clone --depth 1 https://github.com/devanshbatham/paramspider.git /usr/src/github/paramspider
+
+# Stage 3: Main image
+FROM jftecnologia/frankenphp:8.4
+
+# Labels and Credits
+LABEL \
+  name="Vulnerability Scanner" \
+  author="Junior Fontenele <dockerfile+vulnscan@juniorfontenele.com.br>" \
+  description="Image with set of security tools for vulnerability scanning"
+
+# Install NodeJS repository
+RUN curl -fsSL https://deb.nodesource.com/setup_21.x | bash -
+
+# System packages installation
+RUN apt-get update && apt-get upgrade -y && \
+  apt-get install -y --no-install-recommends \
+  nmap nodejs python3 python3-dev python3-pip gconf-service \
+  build-essential cmake geoip-bin geoip-database gcc git wget curl \
+  host dnsutils whois netcat-openbsd libpq-dev libpango-1.0-0 \
+  libpangoft2-1.0-0 libpcap-dev python3-netaddr \
+  # Browsershot dependencies
+  libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 \
+  libexpat1 libfontconfig1 libgbm1 libgcc1 libgconf-2-4 \
+  libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 \
+  libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 \
+  libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 \
+  libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 \
+  libxtst6 ca-certificates fonts-liberation libappindicator1 \
+  libnss3 lsb-release xdg-utils libgbm-dev libxshmfence-dev && \
+  npm install --location=global --unsafe-perm puppeteer@^17 && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+  PYTHONUNBUFFERED=1 \
+  GOROOT="/usr/local/go" \
+  GOPATH=/root/go \
+  PATH="/usr/local/go/bin:/root/go/bin:/go/bin:${PATH}"
+
+# Create directories
+RUN mkdir -p /usr/src/app /usr/src/wordlist /usr/src/scan_results ~/.gf
+
+# Copy Go binaries from builder
+COPY --from=go-builder /go/bin /go/bin
+
+# Install and configure tools
 COPY ./requirements.txt /tmp/requirements.txt
-RUN pip install --break-system-packages -r /tmp/requirements.txt
+RUN pip install --break-system-packages -r /tmp/requirements.txt && \
+  # Configure httpx alias
+  echo 'alias httpx="/go/bin/httpx"' >> ~/.bashrc && \
+  # Install GF patterns
+  git clone https://github.com/tomnomnom/gf ~/Gf-tomnomnom && \
+  mv ~/Gf-tomnomnom/examples/*.json ~/.gf && \
+  git clone https://github.com/1ndianl33t/Gf-Patterns ~/Gf-Patterns && \
+  mv ~/Gf-Patterns/*.json ~/.gf
 
-# httpx seems to have issue, use alias instead!!!
-RUN echo 'alias httpx="/go/bin/httpx"' >> ~/.bashrc
-RUN alias httpx="/go/bin/httpx"
+# Copy Wordlists
+COPY --from=builder /usr/src/wordlist /usr/src/wordlist
 
-# clone dirsearch default wordlist
-RUN mkdir -p /usr/src/wordlist
-RUN wget https://raw.githubusercontent.com/maurosoria/dirsearch/master/db/dicc.txt -O /usr/src/wordlist/dicc.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/deepmagic.com-prefixes-top50000.txt -O /usr/src/wordlist/deepmagic.com-prefixes-top50000.txt
+# Copy security tools from builder
+COPY --from=builder /usr/src/github /usr/src/github
 
-# clone Sublist3r
-RUN git clone https://github.com/aboul3la/Sublist3r /usr/src/github/Sublist3r \
-    && pip install --break-system-packages -r /usr/src/github/Sublist3r/requirements.txt
+RUN ln -s /usr/src/github/scipag_vulscan /usr/share/nmap/scripts/vulscan && \
+  ln -s /usr/src/github/sqlmap-dev/sqlmap.py /usr/local/bin/sqlmap && \
+  chmod +x /usr/src/github/goofuzz/GooFuzz
 
-# clone OneForAll
-RUN git clone https://github.com/shmilylty/OneForAll /usr/src/github/OneForAll \
-    && pip install --break-system-packages -r /usr/src/github/OneForAll/requirements.txt
+# Install Python dependencies for cloned tools
+RUN pip install --break-system-packages -r /usr/src/github/Sublist3r/requirements.txt
+RUN pip install --break-system-packages -r /usr/src/github/OneForAll/requirements.txt
+RUN pip install --break-system-packages -r /usr/src/github/theHarvester/requirements/base.txt
+RUN pip install --break-system-packages -r /usr/src/github/CMSeeK/requirements.txt
+RUN pip install --break-system-packages -r /usr/src/github/WhatsMyName-Client/requirements.txt
+RUN pip install --break-system-packages -r /usr/src/github/dnsrecon/requirements.txt
+RUN pip install --break-system-packages -r /usr/src/github/XSStrike/requirements.txt
 
-# clone eyewitness
-RUN git clone https://github.com/FortyNorthSecurity/EyeWitness /usr/src/github/EyeWitness
-    #&& pip install --break-system-packages -r /usr/src/github/Eyewitness/requirements.txt
-
-# clone theHarvester
-RUN git clone https://github.com/laramies/theHarvester /usr/src/github/theHarvester \
-    && pip install --break-system-packages -r /usr/src/github/theHarvester/requirements/base.txt
-
-# clone vulscan
-RUN git clone https://github.com/scipag/vulscan /usr/src/github/scipag_vulscan \
-    && ln -s /usr/src/github/scipag_vulscan /usr/share/nmap/scripts/vulscan \
-    && echo "Usage in reNgine, set vulscan/vulscan.nse in nmap_script scanEngine port_scan config parameter"
-
-# clone CMSeeK
-RUN git clone https://github.com/Tuhinshubhra/CMSeeK /usr/src/github/CMSeeK \
-    && pip install --break-system-packages -r /usr/src/github/CMSeeK/requirements.txt
-
-# clone Infoga
-RUN git clone https://github.com/The404Hacking/Infoga /usr/src/github/Infoga
-
-# clone ctfr
-RUN git clone https://github.com/UnaPibaGeek/ctfr /usr/src/github/ctfr
-
-# clone gooFuzz
-RUN git clone https://github.com/m3n0sd0n4ld/GooFuzz.git /usr/src/github/goofuzz \
-    && chmod +x /usr/src/github/goofuzz/GooFuzz
-
-# clone WhatsMyName Client
-RUN git clone https://github.com/grabowskiadrian/whatsmyname-client.git /usr/src/github/WhatsMyName-Client \
-    && pip install --break-system-packages -r /usr/src/github/WhatsMyName-Client/requirements.txt \
-    && python3 /usr/src/github/WhatsMyName-Client/wmnc.py update
-
-# install h8mail
-RUN pip install --break-system-packages h8mail
-
-# install whoisdomain
-RUN pip install --break-system-packages whoisdomain
-
-# install gf patterns
-RUN mkdir ~/.gf \
-    && git clone https://github.com/tomnomnom/gf ~/Gf-tomnomnom \
-    && mv ~/Gf-tomnomnom/examples/*.json ~/.gf \
-    && git clone https://github.com/1ndianl33t/Gf-Patterns ~/Gf-Patterns \
-    && mv ~/Gf-Patterns/*.json ~/.gf
-
-# store scan_results
-RUN mkdir /usr/src/scan_results
-
-# install nuclei templates
-RUN rm -rf ~/nuclei-templates/geeknik_nuclei_templates \
-    && git clone https://github.com/geeknik/the-nuclei-templates.git ~/nuclei-templates/geeknik_nuclei_templates \
-    && wget https://raw.githubusercontent.com/NagliNagli/BountyTricks/main/ssrf.yaml -O ~/nuclei-templates/ssrf_nagli.yaml
-
-# test tools, required for configuration
-RUN naabu -hc
-RUN subfinder
-RUN amass
-RUN nuclei
-
-# Download Wordlists
-RUN mkdir -p /usr/src/wordlist
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-20000.txt -O /usr/src/wordlist/subdomains-top1million-20000.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-5000.txt -O /usr/src/wordlist/subdomains-top1million-5000.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/api/api-endpoints.txt -O /usr/src/wordlist/api-endpoints.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/Common-DB-Backups.txt -O /usr/src/wordlist/Common-DB-Backups.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/Common-PHP-Filenames.txt -O /usr/src/wordlist/Common-PHP-Filenames.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/CommonBackdoors-ASP.fuzz.txt -O /usr/src/wordlist/CommonBackdoors-ASP.fuzz.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/CommonBackdoors-JSP.fuzz.txt -O /usr/src/wordlist/CommonBackdoors-JSP.fuzz.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/CommonBackdoors-PHP.fuzz.txt -O /usr/src/wordlist/CommonBackdoors-PHP.fuzz.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/CommonBackdoors-PL.fuzz.txt -O /usr/src/wordlist/CommonBackdoors-PL.fuzz.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/common-and-portuguese.txt -O /usr/src/wordlist/common-and-portuguese.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/directory-list-2.3-medium.txt -O /usr/src/wordlist/directory-list-2.3-medium.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/raft-medium-files.txt -O /usr/src/wordlist/raft-medium-files.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Fuzzing/fuzz-Bo0oM.txt -O /usr/src/wordlist/fuzz-Bo0oM.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/darkweb2017-top10000.txt -O /usr/src/wordlist/darkweb2017-top10000.txt
-RUN wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/xato-net-10-million-passwords-10000.txt -O /usr/src/wordlist/xato-net-10-million-passwords-10000.txt
-
-# Install dnsrecon
-RUN git clone https://github.com/darkoperator/dnsrecon.git /usr/src/github/dnsrecon \
-    && pip install --break-system-packages -r /usr/src/github/dnsrecon/requirements.txt
-
-# Install sqlmap
-RUN git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git sqlmap-dev \
-    && ln -s /usr/src/github/sqlmap-dev/sqlmap.py /usr/local/bin/sqlmap
-
-# Install XSStrike
-RUN git clone https://github.com/s0md3v/XSStrike.git /usr/src/github/XSStrike \
-    && pip install --break-system-packages -r /usr/src/github/XSStrike/requirements.txt
-
-# Install paramspider
-RUN git clone https://github.com/devanshbatham/paramspider.git /usr/src/github/paramspider \
-    && pip install /usr/src/github/paramspider --break-system-packages 
-
-# Install meg
-RUN go install github.com/tomnomnom/meg@latest
-
-# Parse wordlist
-RUN cat /usr/src/wordlist/dicc.txt | grep -v "%EXT" > /usr/src/wordlist/dicc_parsed.txt
+# Update and configure tools
+RUN nuclei -update && \
+  nuclei -update-templates && \
+  httpx -up && \
+  naabu -up && \
+  subfinder -up && \
+  tlsx -up && \
+  katana -up && \
+  python3 /usr/src/github/WhatsMyName-Client/wmnc.py update
 
 # Install proxychains4
-RUN wget https://github.com/haad/proxychains/archive/refs/tags/proxychains-4.4.0.tar.gz -O /tmp/proxychains-4.4.0.tar.gz \
-    && tar -xvf /tmp/proxychains-4.4.0.tar.gz -C /tmp \
-    && cd /tmp/proxychains-proxychains-4.4.0 \
-    && ./configure \
-    && USER_CFLAGS="-Wno-stringop-truncation" make \
-    && make install \
-    && cp src/proxychains.conf /etc/proxychains.conf \
-    && cd /tmp \
-    && rm -rf /tmp/proxychains-proxychains-4.4.0 \
-    && rm /tmp/proxychains-4.4.0.tar.gz
+RUN wget https://github.com/haad/proxychains/archive/refs/tags/proxychains-4.4.0.tar.gz -O /tmp/proxychains.tar.gz && \
+  tar -xf /tmp/proxychains.tar.gz -C /tmp && \
+  cd /tmp/proxychains-proxychains-4.4.0 && \
+  ./configure && \
+  USER_CFLAGS="-Wno-stringop-truncation" make && \
+  make install && \
+  cp src/proxychains.conf /etc/proxychains.conf && \
+  cd / && \
+  rm -rf /tmp/proxychains*
 
+# Copy supervisor configuration
 COPY ./supervisord.conf /etc/supervisor/supervisord.conf
 
+# Set working directory
 WORKDIR /app
