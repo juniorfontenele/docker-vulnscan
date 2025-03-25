@@ -1,5 +1,5 @@
 # Stage 1: Build Go tools
-FROM golang:1.22 AS go-builder
+FROM golang:1.24 AS go-builder
 
 RUN apt-get update \
   && apt-get upgrade -y \
